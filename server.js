@@ -20,6 +20,8 @@ app.get("/", async (req, res) => {
   });
 });
 
+const PORT = 5000 | "https://agile-cardigan-slug.cyclic.cloud/";
+
 app.post("/api/question", async (req, res) => {
   const { question } = req.body;
 
