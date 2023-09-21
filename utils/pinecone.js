@@ -1,54 +1,55 @@
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-// import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { loadQAStuffChain, ConversationChain } from "langchain/chains";
 import { Document } from "langchain/document";
 
-import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder, AIMessagePromptTemplate } from "langchain/prompts";
+import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder } from "langchain/prompts";
 import { BufferMemory } from "langchain/memory";
+
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { LIVE_CHAT_PROMPT } from "./Constant.js";
 
-// export const updatedPinecone = async (pinecone, indexName, docs) => {
-//   const index = pinecone.index(indexName);
+export const updatedPinecone = async (pinecone, indexName, docs) => {
+  const index = pinecone.index(indexName);
 
-//   for (const doc of docs) {
-//     const textPath = doc.metadata.source;
+  for (const doc of docs) {
+    const textPath = doc.metadata.source;
 
-//     const text = doc.pageContent;
+    const text = doc.pageContent;
 
-//     const textSplitter = new RecursiveCharacterTextSplitter({
-//       chunkSize: 1000,
-//     });
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+    });
 
-//     const chunks = await textSplitter.createDocuments([text]);
+    const chunks = await textSplitter.createDocuments([text]);
 
-//     const embeddingsArray = await new OpenAIEmbeddings({
-//       openAIApiKey: process.env.OPENAI_KEY,
-//     }).embedDocuments(chunks.map((chunk) => chunk.pageContent.replace(/\n/g, "")));
+    const embeddingsArray = await new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_KEY,
+    }).embedDocuments(chunks.map((chunk) => chunk.pageContent.replace(/\n/g, " ")));
 
-//     const batchSize = 100;
-//     let batch = [];
-//     for (let idx = 0; idx < chunks.length; idx++) {
-//       const chunk = chunks[idx];
-//       const vector = {
-//         id: `${textPath}_${idx}`,
-//         values: embeddingsArray[idx],
-//         metadata: {
-//           ...chunk.metadata,
-//           loc: JSON.stringify(chunk.metadata.loc),
-//           pageContent: chunk.pageContent,
-//           txtPath: textPath,
-//         },
-//       };
-//       batch = [...batch, vector];
+    const batchSize = 100;
+    let batch = [];
+    for (let idx = 0; idx < chunks.length; idx++) {
+      const chunk = chunks[idx];
+      const vector = {
+        id: `${textPath}_${idx}`,
+        values: embeddingsArray[idx],
+        metadata: {
+          ...chunk.metadata,
+          loc: JSON.stringify(chunk.metadata.loc),
+          pageContent: chunk.pageContent,
+          txtPath: textPath,
+        },
+      };
+      batch = [...batch, vector];
 
-//       if (batch.length === batchSize || idx === chunks.length - 1) {
-//         await index.upsert(batch);
-//         batch = [];
-//       }
-//     }
-//   }
-// };
+      if (batch.length === batchSize || idx === chunks.length - 1) {
+        await index.upsert(batch);
+        batch = [];
+      }
+    }
+  }
+};
 
 export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, question) => {
   const chat = new ChatOpenAI({
@@ -72,12 +73,12 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
   const index = pinecone.Index(indexName);
   const queryEmbedding = await new OpenAIEmbeddings({
     openAIApiKey: process.env.OPENAI_KEY,
-    modelName: "text-embedding-ada-002",
   }).embedQuery(response.response);
 
   console.log(queryEmbedding);
   const queryResponse = {
     topK: 10,
+
     vector: queryEmbedding,
     includeMetadata: true,
   };
@@ -91,6 +92,7 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
       input_documents: [new Document({ pageContent: concatenatedPageContent })],
       question: question,
     });
+
     return {
       user: question,
       bot: result.text,

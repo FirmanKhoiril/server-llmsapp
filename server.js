@@ -2,9 +2,8 @@ import express from "express";
 import * as dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
-import { TextLoader } from "langchain/document_loaders/fs/text";
-
-import { queryPineconeVectorStoreAndQueryLLM } from "./utils/pinecone.js";
+// import { TextLoader } from "langchain/document_loaders/fs/text";
+import { queryPineconeVectorStoreAndQueryLLM, updatedPinecone } from "./utils/pinecone.js";
 import { Pinecone } from "@pinecone-database/pinecone";
 
 dotenv.config();
@@ -25,9 +24,9 @@ const PORT = 5000 | "https://agile-cardigan-slug.cyclic.cloud/";
 app.post("/api/question", async (req, res) => {
   const { question } = req.body;
 
-  const loader = new TextLoader("./data/salestesting.txt");
+  // const loader = new TextLoader("./data/multipliers as plain text.txt");
 
-  const docs = await loader.load();
+  // const docs = await loader.load();
   const indexName = process.env.PINECONE_INDEX;
 
   const pinecone = new Pinecone({
