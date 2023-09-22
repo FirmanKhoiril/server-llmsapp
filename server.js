@@ -35,13 +35,22 @@ app.post("/api/transcript", async (req, res) => {
   };
   const title = transcript?.transcript?.map((item) => {
     data = {
-      title: item?.title || "",
-      role: item?.role || "",
-      content: item?.content || "",
+      title: item?.title,
+      role: item?.role,
+      content: item?.content,
     };
     return data;
   });
+
   try {
+    const checkIsTitleAlreadyExist = await Transcript.findOne({
+      title: transcript.title,
+    });
+    if (checkIsTitleAlreadyExist)
+      return res.status(401).json({
+        message: `This ${transcript.title} Title is already exist`,
+      });
+
     const newTranscript = new Transcript({
       title: transcript?.title,
       transcript: title,
@@ -57,6 +66,19 @@ app.post("/api/transcript", async (req, res) => {
   }
 });
 
+app.post("/api/transcript/id", async (req, res) => {
+  const { id } = req.body;
+  try {
+    const data = await Transcript.findById(id);
+    res.status(200).json({
+      data,
+    });
+  } catch (error) {
+    res.status(400).json({
+      err: error,
+    });
+  }
+});
 app.get("/api/transcript", async (req, res) => {
   try {
     const getTranscript = await Transcript.find();
