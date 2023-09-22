@@ -2,13 +2,18 @@ import express from "express";
 import * as dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
+
 import { queryPineconeVectorStoreAndQueryLLM, updatedPinecone } from "./utils/pinecone.js";
 import { Pinecone } from "@pinecone-database/pinecone";
+import mongoose from "mongoose";
+import Transcript from "./models/transcript.js";
 // import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 // import { TextLoader } from "langchain/document_loaders/fs/text";
 // import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 
-dotenv.config();
+dotenv.config({
+  path: "./.env",
+});
 
 const app = express();
 app.use(cors());
@@ -19,6 +24,47 @@ app.get("/", async (req, res) => {
   res.status(200).send({
     message: "hello world",
   });
+});
+
+app.post("/api/transcript", async (req, res) => {
+  const { transcript } = req.body;
+  let data = {
+    title: "",
+    role: "",
+    content: "",
+  };
+  const title = transcript?.transcript?.map((item) => {
+    data = {
+      title: item?.title || "",
+      role: item?.role || "",
+      content: item?.content || "",
+    };
+    return data;
+  });
+  try {
+    const newTranscript = new Transcript({
+      title: transcript?.title,
+      transcript: title,
+    });
+    await newTranscript.save();
+    res.status(200).json({
+      newTranscript,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/transcript", async (req, res) => {
+  try {
+    const getTranscript = await Transcript.find();
+
+    res.status(200).json(getTranscript);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
 });
 
 app.post("/api/question", async (req, res) => {
@@ -51,4 +97,7 @@ app.post("/api/question", async (req, res) => {
   }
 });
 
-app.listen(5000, () => console.log(`server running in port 5000`));
+mongoose
+  .connect(process.env.MONGODB_CONNECT)
+  .then(() => app.listen(5000, () => console.log(`server running in port 5000`)))
+  .catch((error) => console.log(error.message));
