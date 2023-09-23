@@ -15,6 +15,7 @@ dotenv.config({
   path: "./.env",
 });
 
+const PORT = 5000;
 const app = express();
 app.use(cors());
 app.use(morgan("dev"));
@@ -119,7 +120,22 @@ app.post("/api/question", async (req, res) => {
   }
 });
 
-mongoose
-  .connect(process.env.MONGODB_CONNECT)
-  .then(() => app.listen(5000, () => console.log(`server running in port 5000`)))
-  .catch((error) => console.log(error.message));
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_CONNECT);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
+};
+
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log("listening for requests");
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  });
