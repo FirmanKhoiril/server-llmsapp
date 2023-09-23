@@ -78,9 +78,9 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
   console.log(queryEmbedding);
   const queryResponse = {
     topK: 10,
-
     vector: queryEmbedding,
     includeMetadata: true,
+    includeValues: true,
   };
 
   const queryFound = await index.query(queryResponse);

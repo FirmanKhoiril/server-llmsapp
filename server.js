@@ -15,11 +15,21 @@ dotenv.config({
   path: "./.env",
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 const app = express();
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_CONNECT);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
+};
 
 app.get("/", async (req, res) => {
   res.status(200).send({
@@ -119,16 +129,6 @@ app.post("/api/question", async (req, res) => {
     });
   }
 });
-
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_CONNECT);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.log(error);
-    process.exit(1);
-  }
-};
 
 connectDB()
   .then(() => {
