@@ -23,17 +23,16 @@ app.use(express.json());
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_CONNECT);
+    const conn = await mongoose.connect(process.env.MONGO_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.log(error);
     process.exit(1);
   }
 };
-
-app.get("/", async (req, res) => {
-  res.status(200).send({
-    message: "hello world",
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "test",
   });
 });
 
