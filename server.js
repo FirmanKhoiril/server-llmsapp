@@ -133,12 +133,8 @@ app.post("/api/question", async (req, res) => {
   }
 });
 
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log("listening for requests");
-    });
-  })
-  .catch((err) => {
-    console.log(err);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log("listening for requests");
   });
+});
