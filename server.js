@@ -16,6 +16,7 @@ dotenv.config({
 });
 
 const PORT = process.env.PORT || 3000;
+const MONGO_URI = "mongodb+srv://firmankhoiril:RUlHaCe3UBTv7ybj@cluster0.wggmcnp.mongodb.net/?retryWrites=true&w=majority";
 const app = express();
 app.use(cors());
 app.use(morgan("dev"));
@@ -23,7 +24,7 @@ app.use(express.json());
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
+    const conn = await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
