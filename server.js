@@ -106,6 +106,7 @@ app.get("/api/transcript", async (req, res) => {
 
 app.post("/api/question", async (req, res) => {
   const { question } = req.body;
+
   // const loader = new DirectoryLoader("./data", {
   //   ".txt": (path) => new TextLoader(path),
   //   ".pdf": (path) => new PDFLoader(path),
