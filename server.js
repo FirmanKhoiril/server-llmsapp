@@ -16,6 +16,7 @@ dotenv.config({
 });
 
 const PORT = process.env.PORT || 3000;
+
 const MONGO_URI = "mongodb+srv://firmankhoiril:RUlHaCe3UBTv7ybj@cluster0.wggmcnp.mongodb.net/?retryWrites=true&w=majority";
 const app = express();
 app.use(cors());
