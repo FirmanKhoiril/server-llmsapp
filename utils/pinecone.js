@@ -75,9 +75,8 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
     openAIApiKey: process.env.OPENAI_KEY,
   }).embedQuery(response.response);
 
-  console.log(queryEmbedding);
   const queryResponse = {
-    topK: 10,
+    topK: 20,
     vector: queryEmbedding,
     includeMetadata: true,
     includeValues: true,
@@ -92,7 +91,6 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
       input_documents: [new Document({ pageContent: concatenatedPageContent })],
       question: question,
     });
-
     return {
       user: question,
       bot: result.text,
