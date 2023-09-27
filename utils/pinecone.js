@@ -7,11 +7,9 @@ import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemp
 import { BufferMemory } from "langchain/memory";
 
 import { ChatOpenAI } from "langchain/chat_models/openai";
-import { LIVE_CHAT_PROMPT } from "./Constant.js";
 
 export const updatedPinecone = async (pinecone, indexName, docs) => {
   const index = pinecone.index(indexName);
-
   for (const doc of docs) {
     const textPath = doc.metadata.source;
 
@@ -41,6 +39,7 @@ export const updatedPinecone = async (pinecone, indexName, docs) => {
           txtPath: textPath,
         },
       };
+      console.log(batch);
       batch = [...batch, vector];
 
       if (batch.length === batchSize || idx === chunks.length - 1) {
@@ -51,14 +50,14 @@ export const updatedPinecone = async (pinecone, indexName, docs) => {
   }
 };
 
-export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, question) => {
+export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, question, prompt) => {
   const chat = new ChatOpenAI({
     temperature: 0,
     modelName: "gpt-3.5-turbo",
     openAIApiKey: process.env.OPENAI_KEY,
     streaming: true,
   });
-  const chatPrompt = ChatPromptTemplate.fromPromptMessages([SystemMessagePromptTemplate.fromTemplate(LIVE_CHAT_PROMPT), new MessagesPlaceholder("history"), HumanMessagePromptTemplate.fromTemplate("{input}")]);
+  const chatPrompt = ChatPromptTemplate.fromPromptMessages([SystemMessagePromptTemplate.fromTemplate(prompt), new MessagesPlaceholder("history"), HumanMessagePromptTemplate.fromTemplate("{input}")]);
 
   const chain = new ConversationChain({
     memory: new BufferMemory({ returnMessages: true, memoryKey: "history" }),
@@ -79,14 +78,14 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
     topK: 20,
     vector: queryEmbedding,
     includeMetadata: true,
-    includeValues: true,
   };
-
   const queryFound = await index.query(queryResponse);
+  console.log(queryFound);
 
   if (queryFound.matches) {
     const chain = loadQAStuffChain(chat);
     const concatenatedPageContent = queryFound.matches.map((match) => match.metadata.pageContent).join(" ");
+
     const result = await chain.call({
       input_documents: [new Document({ pageContent: concatenatedPageContent })],
       question: question,
@@ -99,3 +98,5 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
     console.log("Since there are no matches, GPT-3 will not be queried.");
   }
 };
+
+// export const get

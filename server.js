@@ -8,7 +8,9 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import mongoose from "mongoose";
 import Transcript from "./models/transcript.js";
 // import { PDFLoader } from "langchain/document_loaders/fs/pdf";
-// import { TextLoader } from "langchain/document_loaders/fs/text";
+import { TextLoader } from "langchain/document_loaders/fs/text";
+import { createFile } from "./data/createFile.js";
+import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
 // import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 
 dotenv.config({
@@ -43,6 +45,9 @@ app.get("/", (req, res) => {
 
 app.post("/api/transcript", async (req, res) => {
   const { transcript } = req.body;
+
+  let contentDocument = "";
+
   let data = {
     title: "",
     role: "",
@@ -56,8 +61,31 @@ app.post("/api/transcript", async (req, res) => {
     };
     return data;
   });
+  const content = transcript?.transcript.map((script) => {
+    return `${script.role === "Sales Copilot" ? "" : `Conversation ${transcript?.title}`} 
+    ""
+    ${script.content}`;
+  });
+  // create new .txt File
+  console.log(transcript.title);
+  const filename = `./data/${transcript.title}.txt`;
+  contentDocument = `${content}`;
+  createFile(filename, contentDocument);
+  console.log(filename, contentDocument);
+  const indexName = process.env.PINECONE_INDEX;
+
+  const pinecone = new Pinecone({
+    apiKey: process.env.PINECONE_API_KEY,
+    environment: process.env.PINECONE_ENVIRONMENT,
+  });
 
   try {
+    const loader = new TextLoader(`./data/${transcript.title}.txt`);
+
+    const docs = await loader.load();
+
+    await updatedPinecone(pinecone, indexName, docs);
+
     const checkIsTitleAlreadyExist = await Transcript.findOne({
       title: transcript.title,
     });
@@ -94,6 +122,7 @@ app.post("/api/transcript/id", async (req, res) => {
     });
   }
 });
+
 app.get("/api/transcript", async (req, res) => {
   try {
     const getTranscript = await Transcript.find();
@@ -119,10 +148,32 @@ app.post("/api/question", async (req, res) => {
     apiKey: process.env.PINECONE_API_KEY,
     environment: process.env.PINECONE_ENVIRONMENT,
   });
-
   try {
     // await updatedPinecone(pinecone, indexName, docs);
-    const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question);
+    const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, LIVE_CHAT_PROMPT);
+
+    res.status(200).json({
+      text,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      error,
+    });
+  }
+});
+
+app.post("/api/question/recomended", async (req, res) => {
+  const { question } = req.body;
+
+  const indexName = process.env.PINECONE_INDEX;
+
+  const pinecone = new Pinecone({
+    apiKey: process.env.PINECONE_API_KEY,
+    environment: process.env.PINECONE_ENVIRONMENT,
+  });
+  try {
+    const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT);
 
     res.status(200).json({
       text,
