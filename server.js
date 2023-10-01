@@ -11,6 +11,7 @@ import Transcript from "./models/transcript.js";
 import { TextLoader } from "langchain/document_loaders/fs/text";
 import { createFile } from "./data/createFile.js";
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
+import Name from "./models/name.js";
 // import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 
 dotenv.config({
@@ -43,6 +44,35 @@ app.get("/", (req, res) => {
   });
 });
 
+app.post("/api/save/transcript", async (req, res) => {
+  const { data, chatId } = req.body;
+  try {
+    // Check if a Transcript with the given title exists
+    const checkIsTitleAlreadyExist = await Transcript.findOne({
+      chatId,
+    });
+
+    if (!checkIsTitleAlreadyExist) {
+      // If it doesn't exist, create a new Transcript
+      const newTranscript = new Transcript({
+        chatId,
+        transcript: data,
+      });
+
+      await newTranscript.save();
+    } else {
+      // If it exists, update the existing Transcript
+      checkIsTitleAlreadyExist.transcript = data;
+      await checkIsTitleAlreadyExist.save();
+      res.status(200).json("Data Updated Successfully");
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 app.post("/api/transcript", async (req, res) => {
   const { transcript } = req.body;
 
@@ -53,6 +83,7 @@ app.post("/api/transcript", async (req, res) => {
     role: "",
     content: "",
   };
+
   const title = transcript?.transcript?.map((item) => {
     data = {
       title: item?.title,
@@ -61,17 +92,18 @@ app.post("/api/transcript", async (req, res) => {
     };
     return data;
   });
+
   const content = transcript?.transcript.map((script) => {
     return `${script.role === "Sales Copilot" ? "" : `Conversation ${transcript?.title}`} 
     ""
     ${script.content}`;
   });
-  // create new .txt File
+
   console.log(transcript.title);
   const filename = `./data/${transcript.title}.txt`;
   contentDocument = `${content}`;
   createFile(filename, contentDocument);
-  console.log(filename, contentDocument);
+
   const indexName = process.env.PINECONE_INDEX;
 
   const pinecone = new Pinecone({
@@ -89,6 +121,7 @@ app.post("/api/transcript", async (req, res) => {
     const checkIsTitleAlreadyExist = await Transcript.findOne({
       title: transcript.title,
     });
+
     if (checkIsTitleAlreadyExist)
       return res.status(401).json({
         message: `This ${transcript.title} Title is already exist`,
@@ -164,7 +197,7 @@ app.post("/api/question", async (req, res) => {
 });
 
 app.post("/api/question/recomended", async (req, res) => {
-  const { question } = req.body;
+  const { question, title } = req.body;
 
   const indexName = process.env.PINECONE_INDEX;
 
@@ -172,11 +205,42 @@ app.post("/api/question/recomended", async (req, res) => {
     apiKey: process.env.PINECONE_API_KEY,
     environment: process.env.PINECONE_ENVIRONMENT,
   });
+
+  function generateRandomId() {
+    const length = 8; // You can adjust the length of the random ID as needed
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let randomId = "";
+
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      randomId += characters.charAt(randomIndex);
+    }
+
+    return randomId;
+  }
+
+  const randomId = generateRandomId();
+
   try {
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT);
 
+    const createName = new Name({
+      content: {
+        title,
+        role: "You",
+        content: question,
+        _id: randomId,
+        contentBot: {
+          title,
+          _id: randomId,
+          role: "Leadership Copilot",
+          content: text.bot,
+        },
+      },
+    });
+    await createName.save();
     res.status(200).json({
-      text,
+      createName,
     });
   } catch (error) {
     console.log(error);

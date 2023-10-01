@@ -1,13 +1,21 @@
 import mongoose from "mongoose";
 
 const transcriptSchema = {
-  title: String,
+  chatId: String,
   transcript: [
     {
       title: String,
       role: String,
       content: String,
-      _id: mongoose.Types.ObjectId,
+      createdAt: { type: Date, default: Date.now, immutable: true },
+      _id: String,
+      contentBot: {
+        title: String,
+        role: String,
+        _id: String,
+        content: String,
+        createdAt: { type: Date, default: Date.now, immutable: true },
+      },
     },
   ],
 };
