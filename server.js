@@ -2,12 +2,11 @@ import express from "express";
 import * as dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
-import { queryPineconeVectorStoreAndQueryLLM, updatedPinecone } from "./utils/pinecone.js";
+import { queryPineconeVectorStoreAndQueryLLM } from "./utils/pinecone.js";
 import { Pinecone } from "@pinecone-database/pinecone";
 import mongoose from "mongoose";
 import Transcript from "./models/transcript.js";
-import { TextLoader } from "langchain/document_loaders/fs/text";
-import { createFile } from "./data/createFile.js";
+
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
 import Name from "./models/name.js";
 
