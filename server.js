@@ -103,6 +103,7 @@ app.post("/api/question", async (req, res) => {
     apiKey: process.env.PINECONE_API_KEY,
     environment: process.env.PINECONE_ENVIRONMENT,
   });
+
   try {
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, LIVE_CHAT_PROMPT);
 
@@ -119,15 +120,15 @@ app.post("/api/question", async (req, res) => {
 
 app.post("/api/question/recomended", async (req, res) => {
   const { question, title } = req.body;
-  const content = `${title}:${question}`;
-  const filename = `./data/${title}.txt`;
+  // const content = `${title}:${question}`;
+  // const filename = `./data/${title}.txt`;
 
-  createFile(filename, content);
-  const indexName = process.env.PINECONE_INDEX;
+  // createFile(filename, content);
+  // const indexName = process.env.PINECONE_INDEX;
 
-  const loader = new TextLoader(`./data/${title}.txt`);
+  // const loader = new TextLoader(`./data/${title}.txt`);
 
-  const docs = await loader.load();
+  // const docs = await loader.load();
 
   const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
@@ -150,7 +151,7 @@ app.post("/api/question/recomended", async (req, res) => {
   const randomId = generateRandomId();
 
   try {
-    await updatedPinecone(pinecone, indexName, docs);
+    // await updatedPinecone(pinecone, indexName, docs);
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT);
     const createName = new Name({
       content: {
