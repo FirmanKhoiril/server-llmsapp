@@ -2,10 +2,8 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { loadQAStuffChain, ConversationChain } from "langchain/chains";
 import { Document } from "langchain/document";
-
 import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder } from "langchain/prompts";
 import { BufferMemory } from "langchain/memory";
-
 import { ChatOpenAI } from "langchain/chat_models/openai";
 
 export const updatedPinecone = async (pinecone, indexName, docs) => {
@@ -72,15 +70,16 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
   const index = pinecone.Index(indexName);
   const queryEmbedding = await new OpenAIEmbeddings({
     openAIApiKey: process.env.OPENAI_KEY,
+    maxConcurrency: 5,
   }).embedQuery(response.response);
 
   const queryResponse = {
-    topK: 20,
+    topK: 10,
     vector: queryEmbedding,
     includeMetadata: true,
   };
+
   const queryFound = await index.query(queryResponse);
-  console.log(queryFound);
 
   if (queryFound.matches) {
     const chain = loadQAStuffChain(chat);
@@ -90,6 +89,7 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
       input_documents: [new Document({ pageContent: concatenatedPageContent })],
       question: question,
     });
+
     return {
       user: question,
       bot: result.text,
@@ -98,5 +98,3 @@ export const queryPineconeVectorStoreAndQueryLLM = async (pinecone, indexName, q
     console.log("Since there are no matches, GPT-3 will not be queried.");
   }
 };
-
-// export const get

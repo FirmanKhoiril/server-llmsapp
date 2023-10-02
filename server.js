@@ -7,7 +7,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import mongoose from "mongoose";
 import Transcript from "./models/transcript.js";
 import { TextLoader } from "langchain/document_loaders/fs/text";
-import { createFile } from "./data/createFile.js";
+import { createFile, deleteFile } from "./data/createFile.js";
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
 import Name from "./models/name.js";
 
@@ -70,75 +70,6 @@ app.post("/api/save/transcript", async (req, res) => {
   }
 });
 
-app.post("/api/transcript", async (req, res) => {
-  const { transcript } = req.body;
-
-  let contentDocument = "";
-
-  let data = {
-    title: "",
-    role: "",
-    content: "",
-  };
-
-  const title = transcript?.transcript?.map((item) => {
-    data = {
-      title: item?.title,
-      role: item?.role,
-      content: item?.content,
-    };
-    return data;
-  });
-
-  const content = transcript?.transcript.map((script) => {
-    return `${script.role === "Sales Copilot" ? "" : `Conversation ${transcript?.title}`} 
-    ""
-    ${script.content}`;
-  });
-
-  console.log(transcript.title);
-  const filename = `./data/${transcript.title}.txt`;
-  contentDocument = `${content}`;
-  createFile(filename, contentDocument);
-
-  const indexName = process.env.PINECONE_INDEX;
-
-  const pinecone = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY,
-    environment: process.env.PINECONE_ENVIRONMENT,
-  });
-
-  try {
-    const loader = new TextLoader(`./data/${transcript.title}.txt`);
-
-    const docs = await loader.load();
-
-    await updatedPinecone(pinecone, indexName, docs);
-
-    const checkIsTitleAlreadyExist = await Transcript.findOne({
-      title: transcript.title,
-    });
-
-    if (checkIsTitleAlreadyExist)
-      return res.status(401).json({
-        message: `This ${transcript.title} Title is already exist`,
-      });
-
-    const newTranscript = new Transcript({
-      title: transcript?.title,
-      transcript: title,
-    });
-    await newTranscript.save();
-    res.status(200).json({
-      newTranscript,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: error.message,
-    });
-  }
-});
-
 app.post("/api/transcript/id", async (req, res) => {
   const { id } = req.body;
   try {
@@ -188,8 +119,15 @@ app.post("/api/question", async (req, res) => {
 
 app.post("/api/question/recomended", async (req, res) => {
   const { question, title } = req.body;
+  const content = `${title}:${question}`;
+  const filename = `./data/${title}.txt`;
 
+  createFile(filename, content);
   const indexName = process.env.PINECONE_INDEX;
+
+  const loader = new TextLoader(`./data/${title}.txt`);
+
+  const docs = await loader.load();
 
   const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
@@ -212,8 +150,9 @@ app.post("/api/question/recomended", async (req, res) => {
   const randomId = generateRandomId();
 
   try {
+    await updatedPinecone(pinecone, indexName, docs);
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT);
-
+    deleteFile(filename);
     const createName = new Name({
       content: {
         title,

@@ -6,3 +6,9 @@ export const createFile = (filename, content) => {
   });
   return document;
 };
+
+export const deleteFile = (filename) => {
+  fs.rmSync(filename, {
+    force: true,
+  });
+};
