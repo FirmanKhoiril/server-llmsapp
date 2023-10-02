@@ -2,17 +2,14 @@ import express from "express";
 import * as dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
-
 import { queryPineconeVectorStoreAndQueryLLM, updatedPinecone } from "./utils/pinecone.js";
 import { Pinecone } from "@pinecone-database/pinecone";
 import mongoose from "mongoose";
 import Transcript from "./models/transcript.js";
-// import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import { TextLoader } from "langchain/document_loaders/fs/text";
 import { createFile } from "./data/createFile.js";
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
 import Name from "./models/name.js";
-// import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 
 dotenv.config({
   path: "./.env",
@@ -169,12 +166,6 @@ app.get("/api/transcript", async (req, res) => {
 app.post("/api/question", async (req, res) => {
   const { question } = req.body;
 
-  // const loader = new DirectoryLoader("./data", {
-  //   ".txt": (path) => new TextLoader(path),
-  //   ".pdf": (path) => new PDFLoader(path),
-  // });
-  // const docs = await loader.load();
-
   const indexName = process.env.PINECONE_INDEX;
 
   const pinecone = new Pinecone({
@@ -182,7 +173,6 @@ app.post("/api/question", async (req, res) => {
     environment: process.env.PINECONE_ENVIRONMENT,
   });
   try {
-    // await updatedPinecone(pinecone, indexName, docs);
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, LIVE_CHAT_PROMPT);
 
     res.status(200).json({
@@ -207,7 +197,7 @@ app.post("/api/question/recomended", async (req, res) => {
   });
 
   function generateRandomId() {
-    const length = 8; // You can adjust the length of the random ID as needed
+    const length = 8;
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let randomId = "";
 
