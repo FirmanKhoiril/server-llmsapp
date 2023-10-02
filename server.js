@@ -7,7 +7,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import mongoose from "mongoose";
 import Transcript from "./models/transcript.js";
 import { TextLoader } from "langchain/document_loaders/fs/text";
-import { createFile, deleteFile } from "./data/createFile.js";
+import { createFile } from "./data/createFile.js";
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
 import Name from "./models/name.js";
 
@@ -152,7 +152,6 @@ app.post("/api/question/recomended", async (req, res) => {
   try {
     await updatedPinecone(pinecone, indexName, docs);
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT);
-    deleteFile(filename);
     const createName = new Name({
       content: {
         title,
