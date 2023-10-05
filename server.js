@@ -20,21 +20,20 @@ const MONGO_URI = "mongodb+srv://firmankhoiril:RUlHaCe3UBTv7ybj@cluster0.wggmcnp
 
 const app = express();
 
+app.use(cors());
+app.use(morgan("dev"));
+app.use(express.json());
+
 const server = http.createServer(app);
 
 const SOCKET_HOSTNAME = "https://growthspark.vercel.app";
 
 const io = new Server(server, {
-  path: "https://server-llms-app.cyclic.cloud",
   cors: {
-    origin: SOCKET_HOSTNAME || "http://localhost:3001",
+    origin: [SOCKET_HOSTNAME, "http://localhost:3001"],
     methods: ["GET", "POST"],
   },
 });
-
-app.use(cors());
-app.use(morgan("dev"));
-app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
