@@ -19,9 +19,6 @@ dotenv.config({
 const MONGO_URI = "mongodb+srv://firmankhoiril:RUlHaCe3UBTv7ybj@cluster0.wggmcnp.mongodb.net/?retryWrites=true&w=majority";
 
 const app = express();
-app.use(cors());
-app.use(morgan("dev"));
-app.use(express.json());
 
 const server = http.createServer(app);
 
@@ -33,6 +30,10 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+app.use(cors());
+app.use(morgan("dev"));
+app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
