@@ -25,8 +25,7 @@ const server = http.createServer(app);
 const SOCKET_HOSTNAME = "https://growthspark.vercel.app";
 
 const io = new Server(server, {
-  path: "/my-custom-path/",
-
+  path: "https://server-llms-app.cyclic.cloud",
   cors: {
     origin: SOCKET_HOSTNAME || "http://localhost:3001",
     methods: ["GET", "POST"],
