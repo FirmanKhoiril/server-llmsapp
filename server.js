@@ -25,9 +25,11 @@ app.use(express.json());
 
 const server = http.createServer(app);
 
+const SOCKET_HOSTNAME = "https://growthspark.vercel.app";
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.SOCKET_HOSTNAME || "http://localhost:3001",
+    origin: SOCKET_HOSTNAME || "http://localhost:3001",
     methods: ["GET", "POST"],
   },
 });
