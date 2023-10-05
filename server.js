@@ -2,25 +2,37 @@ import express from "express";
 import * as dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
+import http from "http";
+import mongoose from "mongoose";
+import Name from "./models/name.js";
+import Transcript from "./models/transcript.js";
 import { queryPineconeVectorStoreAndQueryLLM } from "./utils/pinecone.js";
 import { Pinecone } from "@pinecone-database/pinecone";
-import mongoose from "mongoose";
-import Transcript from "./models/transcript.js";
-
+import { Server } from "socket.io";
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
-import Name from "./models/name.js";
+import { generateRandomId } from "./utils/randomId.js";
 
 dotenv.config({
   path: "./.env",
 });
 
-const PORT = process.env.PORT || 3000;
-
 const MONGO_URI = "mongodb+srv://firmankhoiril:RUlHaCe3UBTv7ybj@cluster0.wggmcnp.mongodb.net/?retryWrites=true&w=majority";
+
 const app = express();
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST"],
+  },
+});
+
+const PORT = process.env.PORT || 3000;
 
 const connectDB = async () => {
   try {
@@ -34,22 +46,41 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
-app.get("/", (req, res) => {
-  res.status(200).json({
-    message: "test",
+
+io.on("connection", (socket) => {
+  console.log(`a user connected: ${socket.id}`);
+
+  socket.on("join_room", (data) => {
+    socket.join(data);
+    console.log(`user ${socket.id} joining room ${data}`);
   });
+
+  socket.on("disconnect", () => {
+    console.log("User Connected", socket.id);
+  });
+
+  socket.on("send_message", async (data) => {
+    const dataContent = data.content;
+    socket.to(data.room).emit("receive_message", dataContent);
+  });
+
+  socket.on("error", (err) => {
+    console.error("Socket error:", err);
+  });
+});
+
+app.get("/", (req, res) => {
+  res.status(200).send("<h1>Hello Welcome back King Crimson</h1>");
 });
 
 app.post("/api/save/transcript", async (req, res) => {
   const { data, chatId } = req.body;
   try {
-    // Check if a Transcript with the given title exists
     const checkIsTitleAlreadyExist = await Transcript.findOne({
       chatId,
     });
 
     if (!checkIsTitleAlreadyExist) {
-      // If it doesn't exist, create a new Transcript
       const newTranscript = new Transcript({
         chatId,
         transcript: data,
@@ -57,7 +88,6 @@ app.post("/api/save/transcript", async (req, res) => {
 
       await newTranscript.save();
     } else {
-      // If it exists, update the existing Transcript
       checkIsTitleAlreadyExist.transcript = data;
       await checkIsTitleAlreadyExist.save();
       res.status(200).json("Data Updated Successfully");
@@ -119,38 +149,17 @@ app.post("/api/question", async (req, res) => {
 
 app.post("/api/question/recomended", async (req, res) => {
   const { question, title } = req.body;
-  // const content = `${title}:${question}`;
-  // const filename = `./data/${title}.txt`;
 
-  // createFile(filename, content);
-  // const indexName = process.env.PINECONE_INDEX;
-
-  // const loader = new TextLoader(`./data/${title}.txt`);
-
-  // const docs = await loader.load();
+  const indexName = process.env.PINECONE_INDEX;
 
   const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
     environment: process.env.PINECONE_ENVIRONMENT,
   });
 
-  function generateRandomId() {
-    const length = 8;
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let randomId = "";
-
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      randomId += characters.charAt(randomIndex);
-    }
-
-    return randomId;
-  }
-
   const randomId = generateRandomId();
 
   try {
-    // await updatedPinecone(pinecone, indexName, docs);
     const text = await queryPineconeVectorStoreAndQueryLLM(pinecone, indexName, question, GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT);
     const createName = new Name({
       content: {
@@ -179,7 +188,7 @@ app.post("/api/question/recomended", async (req, res) => {
 });
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log("listening for requests");
+  server.listen(PORT, () => {
+    console.log(`Server Listening to ${PORT}`);
   });
 });
