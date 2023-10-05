@@ -2,13 +2,11 @@ import express from "express";
 import * as dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
-import http from "http";
 import mongoose from "mongoose";
 import Name from "./models/name.js";
 import Transcript from "./models/transcript.js";
 import { queryPineconeVectorStoreAndQueryLLM } from "./utils/pinecone.js";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { Server } from "socket.io";
 import { GENERATE_CONTEXTUAL_RECOMMENDATIONS_PROMPT, LIVE_CHAT_PROMPT } from "./utils/Constant.js";
 import { generateRandomId } from "./utils/randomId.js";
 
@@ -24,17 +22,6 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 
-const server = http.createServer(app);
-
-const SOCKET_HOSTNAME = "https://growthspark.vercel.app";
-
-const io = new Server(server, {
-  cors: {
-    origin: [SOCKET_HOSTNAME, "http://localhost:3001"],
-    methods: ["GET", "POST"],
-  },
-});
-
 const PORT = process.env.PORT || 3000;
 
 const connectDB = async () => {
@@ -49,28 +36,6 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
-
-io.on("connection", (socket) => {
-  console.log(`a user connected: ${socket.id}`);
-
-  socket.on("join_room", (data) => {
-    socket.join(data);
-    console.log(`user ${socket.id} joining room ${data}`);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User Connected", socket.id);
-  });
-
-  socket.on("send_message", async (data) => {
-    const dataContent = data.content;
-    socket.to(data.room).emit("receive_message", dataContent);
-  });
-
-  socket.on("error", (err) => {
-    console.error("Socket error:", err);
-  });
-});
 
 app.get("/", (req, res) => {
   res.status(200).send("<h1>Hello Welcome back King Crimson</h1>");
@@ -191,7 +156,7 @@ app.post("/api/question/recomended", async (req, res) => {
 });
 
 connectDB().then(() => {
-  server.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`Server Listening to ${PORT}`);
   });
 });
