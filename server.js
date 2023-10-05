@@ -190,7 +190,10 @@ app.post("/api/question/recomended", async (req, res) => {
 });
 
 connectDB().then(() => {
-  server.listen(PORT, () => {
+  server.listen(4000, () => {
     console.log(`Server Listening to ${PORT}`);
+  });
+  app.listen(PORT, () => {
+    console.log(`${PORT}`);
   });
 });
