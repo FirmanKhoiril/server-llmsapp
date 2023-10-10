@@ -5,6 +5,7 @@ const nameSchema = {
     title: String,
     role: String,
     content: String,
+    audioUrl: String,
     createdAt: { type: Date, default: Date.now, immutable: true },
     _id: String,
     contentBot: {

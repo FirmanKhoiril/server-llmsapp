@@ -133,6 +133,7 @@ app.post("/api/question/recomended", async (req, res) => {
       content: {
         title,
         role: "You",
+        audioUrl: "",
         content: question,
         _id: randomId,
         contentBot: {
