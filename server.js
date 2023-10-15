@@ -116,7 +116,7 @@ app.post("/api/question", async (req, res) => {
 });
 
 app.post("/api/question/recomended", async (req, res) => {
-  const { question, title } = req.body;
+  const { question, title, audioUrl } = req.body;
 
   const indexName = process.env.PINECONE_INDEX;
 
@@ -133,7 +133,7 @@ app.post("/api/question/recomended", async (req, res) => {
       content: {
         title,
         role: "You",
-        audioUrl: "",
+        audioUrl: audioUrl,
         content: question,
         _id: randomId,
         contentBot: {
