@@ -49,7 +49,7 @@ app.post("/api/new-transcript", async (req, res) => {
       name,
     });
 
-    if (!checkIfNameAlreadyExist) res.status(400).json(`${name} is Already exist`);
+    if (checkIfNameAlreadyExist) res.status(400).json(`${name} is Already exist`);
 
     const newTranscript = new Transcript({
       content: "",
