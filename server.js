@@ -42,7 +42,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/api/new-transcript", async (req, res) => {
-  const { name, isProcessing } = req.body;
+  const { name } = req.body;
 
   try {
     const checkIfNameAlreadyExist = await Transcript.findOne({
@@ -67,7 +67,7 @@ app.post("/api/new-transcript", async (req, res) => {
 });
 
 app.post("/api/saved-transcript", async (req, res) => {
-  const { id, content, name } = req.body;
+  const { id, content } = req.body;
 
   let isProcessing = false;
 
@@ -75,7 +75,10 @@ app.post("/api/saved-transcript", async (req, res) => {
     const checkIdExist = await Transcript.findById(id);
 
     if (checkIdExist) {
-      await Transcript.updateOne({ _id: id }, { $set: { content, name, isProcessing } });
+      await Transcript.updateOne({ _id: id }, { $set: { content, isProcessing } });
+      return res.status(200).json({
+        message: "Transcript get update Successfully!",
+      });
     }
   } catch (error) {
     res.status(400).json({
