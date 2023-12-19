@@ -67,7 +67,9 @@ app.post("/api/new-transcript", async (req, res) => {
 });
 
 app.post("/api/saved-transcript", async (req, res) => {
-  const { id, content, name, isProcessing } = req.body;
+  const { id, content, name } = req.body;
+
+  let isProcessing = false;
 
   try {
     const checkIdExist = await Transcript.findById(id);
