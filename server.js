@@ -41,6 +41,47 @@ app.get("/", (req, res) => {
   res.status(200).send("<h1>Hello Welcome back King Crimson</h1>");
 });
 
+app.post("/api/new-transcript", async (req, res) => {
+  const { name, isProcessing } = req.body;
+
+  try {
+    const checkIfNameAlreadyExist = await Transcript.findOne({
+      name,
+    });
+
+    if (!checkIfNameAlreadyExist) res.status(400).json(`${name} is Already exist`);
+
+    const newTranscript = new Transcript({
+      content: "",
+      name,
+      isProcessing: true,
+    });
+
+    await newTranscript.save();
+    res.status(200).json(newTranscript);
+  } catch (error) {
+    res.status(400).json({
+      message: "Failed Create new Transcript History",
+    });
+  }
+});
+
+app.post("/api/saved-transcript", async (req, res) => {
+  const { id, content, name, isProcessing } = req.body;
+
+  try {
+    const checkIdExist = await Transcript.findById(id);
+
+    if (checkIdExist) {
+      await Transcript.updateOne({ _id: id }, { $set: { content, name, isProcessing } });
+    }
+  } catch (error) {
+    res.status(400).json({
+      message: "error saving transcript",
+    });
+  }
+});
+
 app.post("/api/save/transcript", async (req, res) => {
   const { data, chatId } = req.body;
   try {
